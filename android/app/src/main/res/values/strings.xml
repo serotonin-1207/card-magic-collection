@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">카드 마술 모음</string>
+    <string name="title_activity_main">카드 마술 모음</string>
+    <string name="package_name">com.serotonin1207.cardmagic</string>
+    <string name="custom_url_scheme">com.serotonin1207.cardmagic</string>
+</resources>

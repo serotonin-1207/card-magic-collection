@@ -44,4 +44,20 @@ node tests/verify-tricks.mjs
 - **아이폰**: Safari → 공유 → 홈 화면에 추가
 - **안드로이드**: Chrome → 메뉴(⋮) → 앱 설치
 
-앱스토어와 플레이스토어에 올리려면 Capacitor 등으로 감싸야 합니다. iOS 빌드에는 Mac 또는 클라우드 빌드와 Apple 개발자 계정이 필요합니다.
+iOS 앱스토어에 올리려면 Mac 또는 클라우드 빌드와 Apple 개발자 계정이 필요합니다.
+
+## Play 스토어용 빌드
+
+Android 앱은 Capacitor로 웹 파일을 앱 안에 넣어 만듭니다. Android Studio의 JDK와 SDK가 필요합니다.
+
+```bash
+npm run sync
+```
+
+그다음 `android` 폴더에서 빌드합니다. 새 버전을 올릴 때는 `android/app/build.gradle`의 `versionCode`를 1 올리고 `versionName`을 바꿉니다.
+
+```bash
+gradlew.bat bundleRelease
+```
+
+결과물은 `android/app/build/outputs/bundle/release/app-release.aab`입니다. 서명 정보 `android/keystore.properties`는 저장소에 올리지 않습니다. 스토어 입력 문구와 설문 답변은 `store/listing-ko.md`, 그래픽은 `store/`에 있습니다.

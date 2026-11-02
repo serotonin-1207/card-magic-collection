@@ -56,9 +56,10 @@ def draw_icon(px, scale=1.0, rounded=False):
     return img.resize((px, px), Image.LANCZOS)
 
 
-OUT.mkdir(exist_ok=True)
-draw_icon(180).convert("RGB").save(OUT / "icon-180.png")
-draw_icon(192).save(OUT / "icon-192.png")
-draw_icon(512).save(OUT / "icon-512.png")
-draw_icon(512, scale=0.8).save(OUT / "icon-maskable-512.png")
-print("icons written to", OUT)
+if __name__ == "__main__":
+    OUT.mkdir(exist_ok=True)
+    draw_icon(180).convert("RGB").save(OUT / "icon-180.png")
+    draw_icon(192).save(OUT / "icon-192.png")
+    draw_icon(512).save(OUT / "icon-512.png")
+    draw_icon(512, scale=0.8).save(OUT / "icon-maskable-512.png")
+    print("icons written to", OUT)

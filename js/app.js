@@ -445,7 +445,7 @@
   function viewMe() {
     const favs = TRICKS.filter((t) => store.fav.includes(t.id));
     const started = TRICKS.filter((t) => doneCount(t.id) > 0 && !store.fav.includes(t.id));
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone || globalThis.CARD_PREVIEW;
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone || globalThis.CARD_PREVIEW || globalThis.Capacitor;
     main.innerHTML = `
       <header class="top"><h1>내 연습</h1><p>공연까지 마친 마술 ${mastered()} / ${TRICKS.length}</p></header>
       <div class="meter" role="img" aria-label="${TRICKS.length}개 중 ${mastered()}개 완료">${TRICKS.map((t) => `<span class="${doneCount(t.id) === PRACTICE.length ? 'full' : doneCount(t.id) ? 'part' : ''}"></span>`).join('')}</div>
@@ -519,7 +519,7 @@
   route = (location.hash || '#home').slice(1) || 'home';
   render();
 
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  if (!globalThis.Capacitor && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     try {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     } catch (e) { /* 서비스 워커가 막힌 환경에서는 온라인으로만 동작한다 */ }

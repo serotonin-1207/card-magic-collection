@@ -1,0 +1,19 @@
+{
+  "name": "card-magic-collection",
+  "version": "1.0.0",
+  "private": true,
+  "description": "트럼프와 화투 마술을 공연으로 보고 비법을 단계별로 배우는 앱",
+  "scripts": {
+    "test": "node tests/verify-tricks.mjs",
+    "build:web": "node scripts/build-web.mjs",
+    "sync": "npm run build:web && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/core": "8.6.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0",
+    "@fontsource/gowun-batang": "5.2.8"
+  }
+}

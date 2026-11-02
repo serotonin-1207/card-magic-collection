@@ -1,0 +1,13 @@
+{
+  "appId": "com.serotonin1207.cardmagic",
+  "appName": "카드 마술 모음",
+  "webDir": "www",
+  "backgroundColor": "#17121c",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "initialViewportFitValueHint": "cover",
+      "style": "DARK"
+    }
+  }
+}
