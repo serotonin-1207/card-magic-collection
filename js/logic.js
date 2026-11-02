@@ -44,13 +44,14 @@
   }
 
   // ── 네 장의 에이스 ───────────────────────────
-  // piles: 각 더미(앞쪽이 맨 위). 맨 오른쪽 더미 위에 에이스 4장. 단계마다 상태를 남긴다.
+  // piles: 각 더미(앞쪽이 맨 위). 맨 오른쪽 더미 위에 모을 카드가 더미 수만큼. 단계마다 상태를 남긴다.
   function fourAces(piles) {
     const state = piles.map((p) => p.slice());
     const snaps = [];
     const snap = (pile, kind) => snaps.push({ pile, kind, piles: state.map((p) => p.slice()) });
+    const others = piles.length - 1;
     state.forEach((_, i) => {
-      state[i] = [...state[i].slice(3), ...state[i].slice(0, 3)];
+      state[i] = [...state[i].slice(others), ...state[i].slice(0, others)];
       snap(i, 'under');
       state.forEach((__, j) => {
         if (j !== i) state[j].unshift(state[i].shift());
@@ -194,11 +195,97 @@
     return RANKS[(rankIndex(first) + d) % 13] + suitOf(first);
   }
 
+  // ── 빨강 검정 짝 (길브레스 원리) ─────────────
+  const isRed = (id) => suitOf(id) === 'H' || suitOf(id) === 'D';
+
+  // 위에서 k장을 한 장씩 내려놓아(순서 뒤집힘) 두 덩어리를 한 번 리플한다. 앞쪽이 맨 위.
+  function gilbreath(deck, k, rng = Math.random) {
+    const a = deck.slice(0, k).reverse();
+    const b = deck.slice(k);
+    const fromBottom = [];
+    let i = a.length - 1;
+    let j = b.length - 1;
+    while (i >= 0 || j >= 0) {
+      const takeA = j < 0 || (i >= 0 && rng() < 0.5);
+      fromBottom.push(takeA ? a[i--] : b[j--]);
+    }
+    return fromBottom.reverse();
+  }
+
+  // ── 세 칸씩 도는 덱 (시 스테빈스 배열) ───────
+  const STEBBINS_SUITS = ['C', 'H', 'S', 'D'];
+
+  function stebbinsDeck() {
+    return Array.from({ length: 52 }, (_, i) => RANKS[(i * 3) % 13] + STEBBINS_SUITS[i % 4]);
+  }
+
+  // 맨 아래 카드를 보면 맨 위 카드를 알 수 있다.
+  const stebbinsNext = (id) => RANKS[(rankIndex(id) + 3) % 13] + STEBBINS_SUITS[(STEBBINS_SUITS.indexOf(suitOf(id)) + 1) % 4];
+
+  const cut = (deck, at) => [...deck.slice(at), ...deck.slice(0, at)];
+
+  // ── 뒤섞인 앞뒤 (허머 원리) ──────────────────
+  // packet: {id, up} 목록. 맨 위 두 장을 한 덩어리로 뒤집는다.
+  const flipTopTwo = (packet) => [
+    { ...packet[1], up: !packet[1].up },
+    { ...packet[0], up: !packet[0].up },
+    ...packet.slice(2),
+  ];
+  // 짝수 번째 카드만 뒤집는다.
+  const flipEverySecond = (packet) => packet.map((c, i) => (i % 2 === 1 ? { ...c, up: !c.up } : c));
+
+  // ── 화투 ─────────────────────────────────────
+  const HWATU_KINDS = {
+    1: 'GTPQ', 2: 'YTPQ', 3: 'GTPQ', 4: 'YTPQ', 5: 'YTPQ', 6: 'YTPQ',
+    7: 'YTPQ', 8: 'GYPQ', 9: 'YTPQ', 10: 'YTPQ', 11: 'GPQR', 12: 'GYTP',
+  };
+
+  const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+  const hwatuDeck = () => MONTHS.flatMap((m) => HWATU_KINDS[m].split('').map((k) => `H${m}${k}`));
+  const monthOf = (id) => Number(/^H(\d+)/.exec(id)[1]);
+  const nextMonth = (m) => (m % 12) + 1;
+
+  // 1월부터 12월까지 도는 순서로 48장을 쌓는다.
+  const cycleDeck = () => [0, 1, 2, 3].flatMap((round) => MONTHS.map((m) => `H${m}${HWATU_KINDS[m][round]}`));
+
+  // 바닥 패의 달부터 12까지 세며 쌓는다. 더미 한 개의 장수는 13 - 달.
+  function makeMonthPiles(deck) {
+    const piles = [];
+    let i = 0;
+    while (i < deck.length) {
+      const size = 13 - monthOf(deck[i]);
+      if (i + size > deck.length) break;
+      piles.push(deck.slice(i, i + size));
+      i += size;
+    }
+    return { piles, leftover: deck.slice(i) };
+  }
+
+  const thirdMonth = (remaining, a, b) => remaining - 9 - a - b;
+
+  // 생각한 달 맞히기: 묶음 네 개의 첫 값은 1, 2, 4, 8이다.
+  const BINARY_BITS = [1, 2, 4, 8];
+  const monthsWithBit = (bit) => MONTHS.filter((m) => m & bit);
+  const sumAnswers = (answers) => answers.reduce((sum, yes, i) => sum + (yes ? BINARY_BITS[i] : 0), 0);
+
+  // 마술사의 선택 규칙으로 후보를 줄인다. 어떤 선택에도 마지막은 target인지 전부 따져 본다.
+  function equivoqueAlwaysEnds(cards, target) {
+    if (cards.length === 1) return cards[0] === target;
+    return cards.every((picked) => {
+      // 예언 패를 고르면 그 패만 남기고, 다른 패를 고르면 그 패를 치운다.
+      const rest = picked === target ? [target] : cards.filter((c) => c !== picked);
+      return equivoqueAlwaysEnds(rest, target);
+    });
+  }
+
   const api = {
     RANKS, SUITS, fullDeck, rankOf, suitOf, rankIndex, seeded, shuffle,
     columns21, gather21, fourAces, overhandPeelTop, overhandRunToLast, clock,
     pileValue, makePiles, thirdPileValue, kruskalValue, kruskalPath, kruskalEnd, kruskalDeck,
     downUnder, cheneyEncode, cheneyDecode,
+    isRed, gilbreath, stebbinsDeck, stebbinsNext, cut, flipTopTwo, flipEverySecond,
+    HWATU_KINDS, MONTHS, hwatuDeck, monthOf, nextMonth, cycleDeck, makeMonthPiles, thirdMonth,
+    BINARY_BITS, monthsWithBit, sumAnswers, equivoqueAlwaysEnds,
   };
   globalThis.Logic = api;
 })();

@@ -1,7 +1,7 @@
 {
   "name": "카드 마술 모음",
   "short_name": "카드 마술",
-  "description": "카드 마술을 공연으로 보고 비법을 단계별로 배우는 앱",
+  "description": "트럼프와 화투 마술을 공연으로 보고 비법을 단계별로 배우는 앱",
   "lang": "ko",
   "start_url": "./index.html",
   "scope": "./",

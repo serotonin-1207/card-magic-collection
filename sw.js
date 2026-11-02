@@ -1,5 +1,5 @@
 // 인터넷이 되면 최신 파일을, 안 되거나 느리면 저장해 둔 파일을 쓴다.
-const VERSION = 'card-magic-2';
+const VERSION = 'card-magic-3';
 const FONT_CACHE = 'card-magic-fonts';
 const NETWORK_WAIT_MS = 2500;
 const SHELL = [
@@ -9,6 +9,8 @@ const SHELL = [
   'css/style.css',
   'js/logic.js',
   'js/tricks.js',
+  'js/tricks-more.js',
+  'js/tricks-hwatu.js',
   'js/stage.js',
   'js/app.js',
   'icons/icon-180.png',

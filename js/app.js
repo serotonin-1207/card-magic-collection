@@ -1,6 +1,7 @@
 // 화면 구성과 이동. 저장은 이 기기의 localStorage에만 한다.
 (function () {
-  const { Stage, Player, miniCard, cardName, pipSvg } = globalThis.CardUI;
+  const CardUI = globalThis.CardUI;
+  const { Stage, Player, miniCard, cardName, pipSvg } = CardUI;
   const L = globalThis.Logic;
   const TRICKS = globalThis.TRICKS;
   const CATS = globalThis.CATEGORIES;
@@ -27,10 +28,10 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const face = (t) => {
     for (let i = t.show.length - 1; i >= 0; i--) {
-      const hit = t.show[i].cards.find((c) => c.hl && /^(10|[2-9AJQK])[SHDC]$/.test(c.id));
-      if (hit) return hit.id;
+      const hit = t.show[i].cards.find((c) => c.hl && CardUI.parse(c.id));
+      if (hit) return hit.id.split('~')[0];
     }
-    return 'AS';
+    return t.deck === 'hwatu' ? 'H12G' : 'AS';
   };
   const levelText = ['', '쉬움', '보통', '어려움'];
   const levelPips = (n) => `<span class="pips" role="img" aria-label="난도 ${levelText[n]}">${[1, 2, 3].map((i) => pipSvg('S', i <= n ? 'on' : 'off')).join('')}</span>`;
@@ -49,7 +50,13 @@
   // ── 현재 화면 정리 ────────────────────
   let cleanup = () => {};
   let route = 'home';
-  const ui = { query: '', cat: '전체' };
+  const ui = { query: '', cat: '전체', deck: 'all' };
+  const isHwatu = (t) => t.deck === 'hwatu';
+  const DECKS = [
+    { key: 'all', label: '전체', match: () => true },
+    { key: 'trump', label: '트럼프', match: (t) => !isHwatu(t) },
+    { key: 'hwatu', label: '화투', match: isHwatu },
+  ];
 
   function makeStage(host, tall = false) {
     host.classList.add('felt');
@@ -70,7 +77,7 @@
     main.innerHTML = `
       <header class="top">
         <h1>카드 마술 모음</h1>
-        <p>${TRICKS.length}가지 마술 · 공연을 보고 비법까지 배웁니다</p>
+        <p>트럼프 ${TRICKS.filter((t) => !isHwatu(t)).length}가지 · 화투 ${TRICKS.filter(isHwatu).length}가지 · 공연을 보고 비법까지 배웁니다</p>
       </header>
       <section class="today" aria-label="오늘의 마술">
         <div id="hero" class="stage"></div>
@@ -84,6 +91,9 @@
         </div>
       </section>
       <div class="find">
+        <div class="decks" role="group" aria-label="카드 종류">
+          ${DECKS.map((d) => `<button data-deck="${d.key}" aria-pressed="${ui.deck === d.key}">${d.label} ${TRICKS.filter(d.match).length}</button>`).join('')}
+        </div>
         <label class="search"><span class="sr">마술 검색</span>
           <input id="q" type="search" placeholder="마술 이름이나 기술로 찾기" value="${esc(ui.query)}" autocomplete="off">
         </label>
@@ -102,12 +112,15 @@
     const listEl = main.querySelector('#list');
     const paint = () => {
       const q = ui.query.trim().toLowerCase();
-      const hits = TRICKS.filter((t) => (ui.cat === '전체' || t.cats.includes(ui.cat))
-        && (!q || [t.title, t.en, t.hook, t.effect, ...t.cats].join(' ').toLowerCase().includes(q)));
+      const inDeck = DECKS.find((d) => d.key === ui.deck).match;
+      const hits = TRICKS.filter((t) => inDeck(t) && (ui.cat === '전체' || t.cats.includes(ui.cat))
+        && (!q || [t.title, t.en, t.hook, t.effect, ...t.cats, isHwatu(t) ? '화투' : '트럼프'].join(' ').toLowerCase().includes(q)));
       listEl.innerHTML = hits.length ? hits.map(trickRow).join('')
-        : `<li class="empty">"${esc(ui.query)}"에 맞는 마술이 없습니다. 다른 말로 찾거나 분류를 전체로 바꿔 보세요.</li>`;
+        : `<li class="empty">조건에 맞는 마술이 없습니다. 다른 말로 찾거나 분류를 전체로 바꿔 보세요.</li>`;
       main.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', c.dataset.cat === ui.cat));
+      main.querySelectorAll('[data-deck]').forEach((c) => c.setAttribute('aria-pressed', c.dataset.deck === ui.deck));
     };
+    main.querySelectorAll('[data-deck]').forEach((c) => c.addEventListener('click', () => { ui.deck = c.dataset.deck; paint(); }));
     main.querySelector('#q').addEventListener('input', (e) => { ui.query = e.target.value; paint(); });
     main.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => { ui.cat = c.dataset.cat; paint(); }));
     paint();
@@ -259,6 +272,9 @@
         <li><button class="row" data-go="labkruskal">${miniCard('5D', 'lead')}
           <span class="row-main"><span class="row-title">길이 합쳐지는 카운트</span><span class="row-hook">비밀 숫자로 카드를 건너뛰면 도착한 카드를 맞힙니다.</span><span class="row-meta"><span>3분</span><span>직접 세어 보기</span></span></span>
         </button></li>
+        <li><button class="row" data-go="labmonth">${miniCard('H7Y', 'lead')}
+          <span class="row-main"><span class="row-title">생각한 달 맞히기</span><span class="row-hook">화투 묶음 네 개에 있는지만 답하면 달을 맞힙니다.</span><span class="row-meta"><span>1분</span><span>화투</span><span>항상 성공</span></span></span>
+        </button></li>
       </ul>`;
   }
 
@@ -370,6 +386,53 @@
     start();
   }
 
+  // ── 체험: 생각한 달 맞히기 ─────────────
+  function viewLabMonth() {
+    main.innerHTML = `
+      <div class="detail-head"><button class="back" data-back aria-label="뒤로">‹</button><div class="detail-title"><h1>생각한 달 맞히기</h1><span>체험 · 화투</span></div></div>
+      <p id="say" class="say lab-say" aria-live="polite"></p>
+      <div id="cards" class="month-ask"></div>
+      <div id="ctl" class="lab-ctl"></div>`;
+    const say = main.querySelector('#say');
+    const cards = main.querySelector('#cards');
+    const ctl = main.querySelector('#ctl');
+    let answers;
+
+    function start() {
+      answers = [];
+      say.textContent = '1월부터 12월 중 한 달을 마음속으로 정하세요.';
+      cards.innerHTML = L.MONTHS.map((m) => miniCard(`H${m}P`)).join('');
+      ctl.innerHTML = '<button class="btn gold-btn wide" data-begin>정했습니다</button>';
+    }
+    function ask() {
+      const bit = L.BINARY_BITS[answers.length];
+      say.textContent = `이 묶음에 그 달이 있나요? (${answers.length + 1}/4번째 질문)`;
+      cards.innerHTML = L.monthsWithBit(bit).map((m) => miniCard(`H${m}P`)).join('');
+      ctl.innerHTML = '<button class="btn" data-ans="1">있어요</button><button class="btn" data-ans="0">없어요</button>';
+    }
+    function finish() {
+      const m = L.sumAnswers(answers);
+      if (m < 1 || m > 12) {
+        say.textContent = '답이 달력 범위를 벗어났습니다. 답하신 내용 중 잘못 본 묶음이 있습니다. 다시 해 볼까요?';
+        cards.innerHTML = '';
+      } else {
+        say.textContent = `당신이 생각한 달은 ${m}월, ${cardName(`H${m}P`).split(' ')[1]}입니다.`;
+        cards.innerHTML = L.HWATU_KINDS[m].split('').map((k) => miniCard(`H${m}${k}`, 'lead')).join('');
+      }
+      ctl.innerHTML = '<button class="btn gold-btn" data-restart>한 번 더</button><button class="btn" data-go="t-hw-think-month">비법 보기</button>';
+    }
+    ctl.addEventListener('click', (e) => {
+      if (e.target.closest('[data-restart]')) return start();
+      if (e.target.closest('[data-begin]')) return ask();
+      const b = e.target.closest('[data-ans]');
+      if (!b) return;
+      answers.push(b.dataset.ans === '1');
+      if (answers.length < 4) ask();
+      else finish();
+    });
+    start();
+  }
+
   // ── 내 연습 ───────────────────────────
   let installPrompt = null;
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -417,6 +480,7 @@
     if (r === 'lab') viewLab();
     else if (r === 'lab21') viewLab21();
     else if (r === 'labkruskal') viewLabKruskal();
+    else if (r === 'labmonth') viewLabMonth();
     else if (r === 'me') viewMe();
     else if (r.startsWith('t-') && TRICKS.find((t) => t.id === r.slice(2))) viewTrick(TRICKS.find((t) => t.id === r.slice(2)));
     else { route = 'home'; viewHome(); }

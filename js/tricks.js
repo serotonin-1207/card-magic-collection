@@ -733,4 +733,5 @@
 
   globalThis.TRICKS = TRICKS;
   globalThis.CATEGORIES = ['셀프워킹', '수학 원리', '손기술', '심리', '2인 마술'];
+  globalThis.TrickKit = { F, C, T, D, DT, pile, row, fan, ids, fast, xr, up, hl };
 })();

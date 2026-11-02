@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import '../js/logic.js';
 import '../js/tricks.js';
+import '../js/tricks-more.js';
+import '../js/tricks-hwatu.js';
 
 const { Logic: L, TRICKS } = globalThis;
 const rng = L.seeded(7);
@@ -153,6 +155,134 @@ check('다섯 장의 암호: 앱 설명의 예시(스페이드 3 + 거리 4 = �
   assert.deepEqual(e.shown.slice(1), ['10H', 'KD', '6C']); // 6C=L, 10H=M, KD=H → M H L
 });
 
+check('빨강 검정 짝: 몇 장을 내려놓고 어떻게 리플해도 모든 쌍이 두 색', () => {
+  const red = L.fullDeck().filter(L.isRed);
+  const black = L.fullDeck().filter((c) => !L.isRed(c));
+  const start = red.flatMap((r, i) => [r, black[i]]);
+  for (let t = 0; t < 5000; t++) {
+    const k = 1 + Math.floor(rng() * 51);
+    const out = L.gilbreath(start, k, rng);
+    assert.equal(out.length, 52);
+    for (let i = 0; i < 52; i += 2) assert.notEqual(L.isRed(out[i]), L.isRed(out[i + 1]), `k=${k} 자리 ${i}`);
+  }
+});
+
+check('세 칸씩 도는 덱: 52장 전부 한 번씩, 어떤 컷에도 바닥 다음이 맨 위', () => {
+  const deck = L.stebbinsDeck();
+  assert.equal(new Set(deck).size, 52);
+  for (let at = 0; at < 52; at++) {
+    const c = L.cut(deck, at);
+    assert.equal(L.stebbinsNext(c[51]), c[0]);
+  }
+  assert.equal(L.stebbinsNext('QS'), '2D'); // 설명의 Q+3=2 예시
+});
+
+check('뒤섞인 앞뒤: 어떤 뒤섞기 뒤에도 하나 걸러 뒤집으면 관객 카드만 반대', () => {
+  for (let t = 0; t < 5000; t++) {
+    const ids = L.shuffle(L.fullDeck(), rng).slice(0, 10);
+    const sel = ids[Math.floor(rng() * 10)];
+    let p = ids.map((id, i) => ({ id, up: (i % 2 === 1) !== (id === sel) }));
+    const moves = Math.floor(rng() * 30);
+    for (let m = 0; m < moves; m++) {
+      p = L.flipTopTwo(p);
+      p = L.cut(p, Math.floor(rng() * 10));
+    }
+    const f = L.flipEverySecond(p);
+    const selUp = f.find((c) => c.id === sel).up;
+    f.filter((c) => c.id !== sel).forEach((c) => assert.notEqual(c.up, selUp));
+  }
+});
+
+check('네 명의 도둑: 숨긴 3장을 덱 가운데로 보내면 맨 위 4장은 잭', () => {
+  const jacks = ['JS', 'JH', 'JD', 'JC'];
+  const hidden = ['5D', '9C', '2H'];
+  const rest = L.fullDeck().filter((c) => !jacks.includes(c) && !hidden.includes(c));
+  let deck = [...hidden, ...jacks, ...rest];
+  for (let i = 0; i < 3; i++) {
+    const c = deck.shift();
+    deck.splice(20, 0, c);
+  }
+  assert.deepEqual(deck.slice(0, 4), jacks);
+});
+
+check('두 잭의 포옹: 어디서 컷해도 잭·관객 카드·잭이 이어짐 (순환 기준)', () => {
+  for (let t = 0; t < 2000; t++) {
+    const rest = L.shuffle(L.fullDeck().filter((c) => !['JS', 'JC'].includes(c)), rng);
+    const sel = rest.pop();
+    const deck = [sel, 'JC', ...rest, 'JS'];
+    const c = L.cut(deck, 1 + Math.floor(rng() * 51));
+    const at = c.indexOf(sel);
+    assert.equal(c[(at + 51) % 52], 'JS');
+    assert.equal(c[(at + 1) % 52], 'JC');
+  }
+});
+
+check('화투: 48장, 달마다 4장, 광 5·열끗 9·띠 10·피 24', () => {
+  const d = L.hwatuDeck();
+  assert.equal(new Set(d).size, 48);
+  const count = (k) => d.filter((c) => k.includes(c.slice(-1))).length;
+  assert.equal(count('G'), 5);
+  assert.equal(count('Y'), 9);
+  assert.equal(count('T'), 10);
+  assert.equal(count('PQR'), 24);
+  L.MONTHS.forEach((m) => assert.equal(d.filter((c) => L.monthOf(c) === m).length, 4));
+});
+
+check('생각한 달 맞히기: 12달 전부 정답, 한 벌로 묶음을 만들 수 있음', () => {
+  L.MONTHS.forEach((m) => {
+    const answers = L.BINARY_BITS.map((b) => L.monthsWithBit(b).includes(m));
+    assert.equal(L.sumAnswers(answers), m);
+    assert.ok(answers.filter(Boolean).length <= 4, '한 달의 패는 4장뿐');
+  });
+  L.BINARY_BITS.forEach((b) => assert.equal(L.monthsWithBit(b)[0], b));
+});
+
+check('고도리 모으기: 세 더미 크기 무관 맨 위가 고도리 세 장', () => {
+  const birds = ['H2Y', 'H4Y', 'H8Y'];
+  for (let t = 0; t < 2000; t++) {
+    const rest = L.shuffle(L.hwatuDeck().filter((c) => !birds.includes(c)), rng);
+    const a = 6 + Math.floor(rng() * 10);
+    const b = 6 + Math.floor(rng() * 10);
+    const piles = [rest.slice(0, a), rest.slice(a, a + b), [...birds, ...rest.slice(a + b)]];
+    const end = L.fourAces(piles).at(-1).piles;
+    assert.deepEqual(end.map((p) => p[0]).sort(), birds.slice().sort());
+  }
+});
+
+check('열두 달 순환: 48장 전부 한 번씩, 어떤 컷에도 바닥 다음 달이 맨 위', () => {
+  const deck = L.cycleDeck();
+  assert.equal(new Set(deck).size, 48);
+  for (let at = 0; at < 48; at++) {
+    const c = L.cut(deck, at);
+    assert.equal(L.nextMonth(L.monthOf(c[47])), L.monthOf(c[0]));
+  }
+});
+
+check('달 더미: 공식이 항상 세 번째 바닥 달을 맞힘', () => {
+  let tested = 0;
+  for (let t = 0; t < 5000; t++) {
+    const { piles } = L.makeMonthPiles(L.shuffle(L.hwatuDeck(), rng));
+    if (piles.length < 3) continue;
+    const picked = L.shuffle(piles, rng).slice(0, 3);
+    const remaining = 48 - picked.flat().length;
+    const [a, b, c] = picked.map((p) => L.monthOf(p[0]));
+    assert.equal(L.thirdMonth(remaining, a, b), c);
+    tested++;
+  }
+  assert.ok(tested > 1000);
+});
+
+check('열두 달 시계: 화투 48장에서 n=1~12 모두 n번째 자리에 13번째 패', () => {
+  for (let t = 0; t < 300; t++) {
+    const deck = L.shuffle(L.hwatuDeck(), rng);
+    for (let n = 1; n <= 12; n++) assert.equal(L.clock(deck, n).positions[n - 1], deck[12]);
+  }
+});
+
+check('오광의 선택: 어떤 순서로 골라도 끝에는 비광', () => {
+  assert.ok(L.equivoqueAlwaysEnds(['H1G', 'H3G', 'H12G', 'H8G', 'H11G'], 'H12G'));
+});
+
 // ── 콘텐츠 무결성 ──
 check('공연 화면에 비법 표시가 없음 (금색 투시 카드·비밀 라벨 금지)', () => {
   for (const t of TRICKS) {
@@ -164,11 +294,13 @@ check('공연 화면에 비법 표시가 없음 (금색 투시 카드·비밀 �
 });
 
 check('모든 프레임: 카드 id 유일, 좌표가 무대 안, 카드 이름 형식 유효', () => {
-  const real = /^(10|[2-9AJQK])[SHDC](~\d)?$/;
+  const hwatu = new Set(L.hwatuDeck());
+  const real = { test: (id) => /^(10|[2-9AJQK])[SHDC](~\d)?$/.test(id) || hwatu.has(id) };
   const generic = /^[a-z]+\d+$/;
   assert.equal(new Set(TRICKS.map((t) => t.id)).size, TRICKS.length);
   for (const t of TRICKS) {
     assert.ok(t.show.length >= 3 && t.steps.length >= 3, t.id);
+    assert.ok(t.show.concat(t.steps.flatMap((s) => s.frames)).every((f) => f.cards.every((c) => !hwatu.has(c.id) || c.hw)), `${t.id} 화투 패가 화투 모양이 아님`);
     const frames = [...t.show, ...t.steps.flatMap((s) => {
       assert.ok(s.frames.length >= 1, `${t.id} ${s.t} 프레임 없음`);
       return s.frames;

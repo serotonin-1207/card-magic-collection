@@ -10,7 +10,7 @@ if (!out) throw new Error('출력 경로를 지정하세요');
 
 const html = read('index.html');
 const body = /<div id="app">[\s\S]*?<\/nav>\s*<\/div>/.exec(html)[0];
-const scripts = ['js/logic.js', 'js/tricks.js', 'js/stage.js', 'js/app.js'].map(read).join('\n');
+const scripts = ['js/logic.js', 'js/tricks.js', 'js/tricks-more.js', 'js/tricks-hwatu.js', 'js/stage.js', 'js/app.js'].map(read).join('\n');
 
 writeFileSync(out, `<title>카드 마술 모음</title>
 <meta name="claude:viewport-fit-sides" content="cover">

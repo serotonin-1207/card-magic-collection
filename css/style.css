@@ -18,6 +18,8 @@
   --back-b: #6f1524;
   --back-blue-a: #27508f;
   --back-blue-b: #1b3a6b;
+  --hw-back-a: #b3202f;
+  --hw-back-b: #7c1320;
   --display: 'Gowun Batang', 'Apple SD Gothic Neo', 'Noto Serif KR', serif;
   --body: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   color-scheme: dark;
@@ -193,6 +195,28 @@ h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
 .eye { display: none; }
 .pc.hl .pc-side { box-shadow: 0 0 0 2px var(--brass), 0 0 16px 3px rgba(220, 183, 111, 0.75); }
 
+/* 화투: 더 좁고 긴 패, 뒷면은 무늬 없는 진홍 */
+.pc.hw .pc-in { width: 84%; margin-left: 8%; }
+.pc.hw .pc-side { border-radius: 5%/3%; }
+.pc.hw .pc-back {
+  border: 0;
+  background: linear-gradient(145deg, var(--hw-back-a), var(--hw-back-b));
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.16), 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.hw-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hw-n {
+  position: absolute;
+  left: 6%;
+  top: 3%;
+  padding: 0 0.28em;
+  border-radius: 0.3em;
+  background: rgba(251, 246, 234, 0.9);
+  color: var(--black-suit);
+  font: 700 0.82em/1.25 var(--display);
+}
+.pc.sm .hw-n { font-size: 1.5em; left: 4%; top: 2%; }
+.pc.hw.hl .pc-side { box-shadow: 0 0 0 2px var(--brass), 0 0 16px 3px rgba(220, 183, 111, 0.75); }
+
 /* 작은 고정 카드 */
 .mini {
   flex: none;
@@ -216,6 +240,8 @@ h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
 .mini.lead b { font-size: 17px; }
 .mini.lead .pip { width: 16px; height: 16px; }
 .mini.xr { border: 2px dashed var(--brass); background: #f4e3b8; }
+.mini.hw { position: relative; width: 33px; font-size: 13px; overflow: hidden; }
+.mini.lead.hw { width: 38px; font-size: 14px; }
 
 /* 오늘의 마술 */
 .today { display: flex; flex-direction: column; gap: 12px; }
@@ -274,6 +300,11 @@ h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
   color: var(--mute);
 }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); font-weight: 600; }
+.decks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.decks button { min-height: 44px; border: 0; background: none; color: var(--mute); font-size: 14.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.decks button + button { border-left: 1px solid var(--line); }
+.decks button[aria-pressed="true"] { background: var(--brass); color: var(--brass-ink); }
+.month-ask { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 
 /* 목록 */
 .rows { list-style: none; padding: 0; display: flex; flex-direction: column; }
@@ -395,7 +426,7 @@ h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
 .num { min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-weight: 600; }
 
 /* 내 연습 */
-.meter { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; }
+.meter { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 3px; }
 .meter span { height: 8px; border-radius: 2px; background: var(--line); }
 .meter .part { background: #8b7442; }
 .meter .full { background: var(--brass); }
