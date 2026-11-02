@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>프레임 점검</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  body { padding: 12px; }
+  #sheet { display: grid; grid-template-columns: repeat(4, 340px); gap: 10px; }
+  .tile p { font-size: 12px; line-height: 1.35; margin: 3px 0 0; color: var(--mute); }
+  h2 { grid-column: 1 / -1; margin: 6px 0 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div id="sheet"></div>
+<script src="../js/logic.js"></script>
+<script src="../js/tricks.js"></script>
+<script src="../js/stage.js"></script>
+<script>
+  // 사용법: frames.html?t=마술id  (모든 장면을 펼쳐 겹침·잘림을 눈으로 확인한다)
+  const q = new URLSearchParams(location.search).get('t');
+  const sheet = document.getElementById('sheet');
+  const problems = [];
+  const add = (t, kind, f) => {
+    const box = document.createElement('div');
+    box.className = 'tile';
+    box.innerHTML = '<div class="stage felt"></div><p></p>';
+    box.querySelector('p').textContent = `[${kind}] ${f.say}`;
+    sheet.appendChild(box);
+    new CardUI.Stage(box.querySelector('.stage')).render(f, true);
+    const sr = box.querySelector('.stage').getBoundingClientRect();
+    box.querySelectorAll('.lb').forEach((l) => {
+      const r = l.getBoundingClientRect();
+      if (r.left < sr.left || r.right > sr.right || r.top < sr.top || r.bottom > sr.bottom) problems.push(`${t.id} [${kind}] 라벨 잘림: ${l.textContent}`);
+    });
+  };
+  TRICKS.filter((t) => !q || t.id === q).forEach((t) => {
+    const h = document.createElement('h2');
+    h.textContent = t.title;
+    sheet.appendChild(h);
+    const pickFast = (fr) => fr.filter((f, i) => !f.ms || f.ms > 500 || i % 8 === 0);
+    pickFast(t.show).forEach((f) => add(t, '공연', f));
+    t.steps.forEach((s, n) => pickFast(s.frames).forEach((f) => add(t, `단계${n + 1}`, f)));
+  });
+  window.problems = problems;
+</script>
+</body>
+</html>
