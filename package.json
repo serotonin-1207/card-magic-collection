@@ -5,7 +5,8 @@
   "description": "트럼프와 화투 마술을 공연으로 보고 비법을 단계별로 배우는 앱",
   "scripts": {
     "test": "node tests/verify-tricks.mjs",
-    "build:web": "node scripts/build-web.mjs",
+    "build:3d": "esbuild src/proto3d.js --bundle --format=esm --minify --target=es2020 --legal-comments=eof --outfile=js/proto3d.js",
+    "build:web": "npm run build:3d && node scripts/build-web.mjs",
     "sync": "npm run build:web && npx cap sync android"
   },
   "dependencies": {
@@ -14,6 +15,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "8.6.0",
-    "@fontsource/gowun-batang": "5.2.8"
+    "@fontsource/gowun-batang": "5.2.8",
+    "esbuild": "0.28.2",
+    "three": "0.187.0"
   }
 }

@@ -33,6 +33,10 @@ node tests/verify-tricks.mjs
 | `js/tricks-hwatu.js` | 화투 마술 |
 | `js/stage.js` | 카드 그리기와 재생 |
 | `js/app.js` | 화면과 이동, 저장 |
+| `src/core3d.js` | 3D 장면의 카드 상태 계산 (테스트에서도 사용) |
+| `src/scenes3d.js` | 마술 24가지의 3D 장면 단계 |
+| `src/proto3d.js` | three.js 3D 화면. `npm run build:3d`로 `js/proto3d.js`에 묶음 |
+| `tests/scenes3d.html` | 3D 장면을 한 화면에 펼쳐 보는 점검 페이지 |
 | `sw.js` | 오프라인 지원. 앱 파일을 추가하면 `SHELL` 목록과 `VERSION`을 함께 고칩니다 |
 | `scripts/make_icons.py` | 앱 아이콘 생성 (Pillow 필요) |
 | `scripts/build-preview.mjs` | 한 파일짜리 미리보기 페이지 생성 |

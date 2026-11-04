@@ -105,7 +105,7 @@ h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
   height: calc(var(--cw) * 1.4);
   font-size: calc(var(--cw) * 0.24);
   perspective: calc(var(--cw) * 7);
-  transition: transform 0.58s cubic-bezier(0.3, 0.75, 0.25, 1), opacity 0.3s ease;
+  transition: transform var(--mv, 0.58s) cubic-bezier(0.3, 0.75, 0.25, 1), opacity 0.3s ease;
   will-change: transform;
 }
 .pc.still { transition: none; }
@@ -116,7 +116,7 @@ h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
   height: 100%;
   transform-style: preserve-3d;
   transform: rotateY(180deg);
-  transition: transform 0.5s ease;
+  transition: transform var(--flip, 0.5s) ease;
 }
 .pc.up .pc-in { transform: rotateY(0deg); }
 .pc.still .pc-in { transition: none; }
@@ -354,7 +354,8 @@ h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
 .pin { display: flex; flex-direction: column; gap: 8px; }
 .cap { display: flex; flex-direction: column; gap: 6px; }
 .cap .say { color: var(--ink); font-size: 15px; min-height: 3.1em; }
-.cap-ctl { display: flex; align-items: center; gap: 6px; }
+.cap-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ghost[aria-pressed="true"] { background: var(--brass); border-color: var(--brass); color: var(--brass-ink); font-weight: 600; }
 .count { flex: 1; color: var(--mute); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 
 .tabs {
@@ -424,6 +425,36 @@ h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
 .mini.stop { box-shadow: 0 0 0 2px var(--brass), 0 0 12px 2px rgba(220, 183, 111, 0.8); background: #f4e3b8; }
 .nums { flex: 1 1 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .num { min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-weight: 600; }
+
+/* 3D 시안 */
+.gl-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 1 / 1.05;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--felt-b);
+  box-shadow: inset 0 0 0 3px var(--rail);
+}
+.gl, .gl canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.gl canvas { touch-action: none; }
+.gl-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: var(--brass);
+  color: var(--brass-ink);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.gl-label.plain { background: rgba(12, 10, 16, 0.82); color: var(--ink); }
+.gl-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; font-size: 14px; color: var(--ink); }
 
 /* 내 연습 */
 .meter { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 3px; }

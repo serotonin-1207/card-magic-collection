@@ -15,6 +15,7 @@
 
     TRICKS.push({
       id: 'red-black-pairs',
+      proto3d: 'riffle',
       title: '빨강 검정 짝',
       en: 'Gilbreath Principle',
       cats: ['셀프워킹', '수학 원리'],
@@ -62,6 +63,7 @@
 
     TRICKS.push({
       id: 'stebbins',
+      proto3d: 'stebbins',
       title: '세 칸씩 도는 덱',
       en: 'Si Stebbins Stack',
       cats: ['수학 원리'],
@@ -122,6 +124,7 @@
 
     TRICKS.push({
       id: 'hummer-flip',
+      proto3d: 'hummer',
       title: '뒤섞인 앞뒤',
       en: "Bob Hummer's Flip",
       cats: ['셀프워킹', '수학 원리'],
@@ -171,6 +174,7 @@
 
     TRICKS.push({
       id: 'four-burglars',
+      proto3d: 'burglars',
       title: '네 명의 도둑',
       en: 'Four Burglars',
       cats: ['손기술'],
@@ -216,6 +220,7 @@
     const spreadOrder = ['4D', 'KH', botJ, sel, topJ, '7S', '3C'];
     TRICKS.push({
       id: 'jack-sandwich',
+      proto3d: 'sandwich',
       title: '두 잭의 포옹',
       en: 'Jack Sandwich',
       cats: ['셀프워킹'],
@@ -260,6 +265,7 @@
     const left = (n) => D(24, 62, 0, n);
     TRICKS.push({
       id: 'hindu-force',
+      proto3d: 'hindu',
       title: '힌두 예언',
       en: 'Hindu Force',
       cats: ['손기술', '심리'],
@@ -302,6 +308,7 @@
     const lifted = (o) => [D(44, 40, 0, 12), C(swap, 50, 62, o.swap || {}), C(shown, 38, 66, o.shown || {})];
     TRICKS.push({
       id: 'glide',
+      proto3d: 'glide',
       title: '바뀌는 바닥 카드',
       en: 'The Glide',
       cats: ['손기술'],

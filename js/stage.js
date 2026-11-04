@@ -89,6 +89,7 @@
       this.cards = new Map();
       this.labels = [];
       this.frame = null;
+      this.slow = false;
       this.labelLayer = document.createElement('div');
       this.labelLayer.className = 'labels';
       el.appendChild(this.labelLayer);
@@ -119,6 +120,10 @@
       if (!W || !H) return;
       const cw = W * 0.155;
       this.el.style.setProperty('--cw', cw + 'px');
+      // 장면이 이동 시간을 지정하거나 '느리게 보기'가 켜져 있으면 카드를 천천히 옮기고 뒤집는다
+      const mv = Math.max(frame.mv || 0, this.slow ? 1100 : 0);
+      this.el.style.setProperty('--mv', `${mv || 580}ms`);
+      this.el.style.setProperty('--flip', `${mv ? Math.round(mv * 0.8) : 500}ms`);
       const seen = new Set();
 
       frame.cards.forEach((item, i) => {
@@ -179,6 +184,7 @@
       this.timer = 0;
       this.playing = false;
       this.loop = false;
+      this.slow = false;
     }
 
     load(frames, { autoplay = true, loop = false } = {}) {
@@ -198,7 +204,15 @@
     }
 
     dwell(f) {
-      return f.ms || Math.max(1700, (f.say || '').length * 62);
+      const base = f.ms || Math.max(1700, (f.say || '').length * 62);
+      return this.slow ? Math.round(base * 1.8) : base;
+    }
+
+    // 느리게 보기: 장면 사이 간격과 카드 이동 시간을 함께 늘린다
+    setSlow(on) {
+      this.slow = on;
+      this.stage.slow = on;
+      if (this.frames[this.i]) this.stage.render(this.frames[this.i]);
     }
 
     tick() {
@@ -248,5 +262,5 @@
     }
   }
 
-  globalThis.CardUI = { Stage, Player, miniCard, cardName, pipSvg, parse };
+  globalThis.CardUI = { Stage, Player, miniCard, cardName, pipSvg, parse, PIPS, hwatuArt };
 })();

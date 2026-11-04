@@ -74,6 +74,7 @@
 
     add({
       id: 'hw-godori',
+      proto3d: 'godori',
       title: '고도리 모으기',
       en: 'Godori Gathering',
       cats: ['셀프워킹'],
@@ -113,6 +114,7 @@
     const top = cutDeck[0], bottom = cutDeck[47];
     add({
       id: 'hw-month-cycle',
+      proto3d: 'monthcycle',
       title: '열두 달 순환',
       en: 'Month Cycle Stack',
       cats: ['수학 원리'],
@@ -159,6 +161,7 @@
     const piles = (oA, oB, oC) => [one(a, cardsA, X[0], oA), one(b, cardsB, X[1], oB), one(c, cardsC, X[2], oC)];
     add({
       id: 'hw-month-piles',
+      proto3d: 'monthpiles',
       title: '달 더미',
       en: 'Count-to-Twelve Piles',
       cats: ['셀프워킹', '수학 원리'],
@@ -200,7 +203,8 @@
   // ── 열두 달 시계 ──────────────────────────────────────
   (() => {
     const known = 'H8G';
-    const demo = [...ids('h', 12), known, ...ids('t', 4)];
+    // 9장을 빼고도 12장을 놓을 수 있도록 넉넉히 둔다
+    const demo = [...ids('h', 12), known, ...ids('t', 12)];
     const n = 9;
     const out = L0.clock(demo, n);
     const pos = (i) => {
@@ -211,6 +215,7 @@
     const pocket = demo.slice(0, n);
     add({
       id: 'hw-clock',
+      proto3d: 'hwclock',
       title: '열두 달 시계',
       en: 'Twelve Month Clock',
       cats: ['셀프워킹', '수학 원리'],
@@ -255,6 +260,7 @@
     const dealing = (deco) => snaps.map((s, i) => fast(frameOf(s, deco, `내리고, 아래로 ${i + 1}번째`), 460));
     add({
       id: 'hw-last-gwang',
+      proto3d: 'lastgwang',
       title: '끝까지 남는 비광',
       en: 'Rain Bright Survivor',
       cats: ['셀프워킹', '수학 원리'],
@@ -291,6 +297,7 @@
     const key = 'H1G', sel = 'H9Y';
     add({
       id: 'hw-key-card',
+      proto3d: 'hwkey',
       title: '짝꿍 패 찾기',
       en: 'Hwatu Key Card',
       cats: ['셀프워킹'],

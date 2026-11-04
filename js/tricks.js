@@ -46,7 +46,7 @@
     const pick = '9H';
     const colX = [24, 50, 76];
     const layout = (d, mark) => L0.columns21(d).map((col, x) => col.map((id, y) =>
-      C(id, colX[x], 15 + y * 11, { up: 1, s: 0.5, hl: mark && id === pick ? 1 : 0 })));
+      C(id, colX[x], 19 + y * 11, { up: 1, s: 0.5, hl: mark && id === pick ? 1 : 0 })));
     const stacked = (d) => d.map((id, i) => C(id, 50 + i * 0.1, 56 - i * 0.2));
     const colOf = (d) => L0.columns21(d).findIndex((c) => c.includes(pick));
 
@@ -61,16 +61,40 @@
 
     // 위에서부터 한 장씩 왼쪽, 가운데, 오른쪽으로 돌아가며 놓는 모습
     const SIDE = ['왼쪽', '가운데', '오른쪽'];
-    const dealSay = (i) => (i < 3 ? `${i + 1}번째 카드는 ${SIDE[i]}` : i === 3 ? '4번째 카드는 다시 왼쪽, 첫 장 아래에' : i < 6 ? `${i + 1}번째 카드는 ${SIDE[i % 3]}` : '이렇게 21장을 끝까지 돌아가며 놓습니다');
-    const dealFrames = (d) => Array.from({ length: 7 }, (_, k) => fast(F(dealSay(k), d.slice(0, k + 1).map((id, i) => C(id, colX[i % 3], 15 + Math.floor(i / 3) * 11, { up: 1, s: 0.5 }))), 1100));
+    // k번째 카드(1부터)를 막 놓은 장면. 아직 안 놓은 카드는 오른쪽 덱에 뒷면으로 쌓여 있다가 하나씩 날아간다.
+    const spot = (i) => ({ x: colX[i % 3], y: 19 + Math.floor(i / 3) * 11 });
+    const dealSay = (k) => {
+      if (k === 0) return '21장을 뒷면으로 들고, 맨 위 카드부터 한 장씩 놓습니다';
+      const i = k - 1;
+      if (k === 21) return '21번째 카드는 오른쪽 열의 맨 아래입니다. 모두 놓았습니다';
+      if (k <= 3) return `${k}번째 카드는 ${SIDE[i % 3]} 열에 놓습니다`;
+      if (k === 4) return '4번째 카드는 다시 왼쪽 열로 돌아와 첫 장 아래에 놓습니다';
+      return `${k}번째 카드는 ${SIDE[i % 3]} 열의 ${Math.floor(i / 3) + 1}번째 자리`;
+    };
+    const dealFrame = (d, k) => {
+      const rest = d.slice(k).reverse().map((id, j) => C(id, 89 + j * 0.1, 52 - j * 0.35, { s: 0.5 }));
+      const placed = d.slice(0, k).map((id, i) => C(id, spot(i).x, spot(i).y, { up: 1, s: 0.5, hl: i === k - 1 ? 1 : 0 }));
+      const nums = d.slice(0, k).map((_, i) => T(spot(i).x - 10, spot(i).y, String(i + 1), i === k - 1 ? 'secret' : undefined));
+      const heads = SIDE.map((n, c) => T(colX[c], 7, n));
+      const left = k < 21 ? [T(89, 70, `${21 - k}장`)] : [];
+      return { ...F(dealSay(k), rest, placed, nums, heads, left), ms: k === 0 ? 2200 : 1900, mv: 1000 };
+    };
+    const dealFrames = (d) => Array.from({ length: 22 }, (_, k) => dealFrame(d, k));
     const firstCols = L0.columns21(rounds[0].before);
     const otherCols = [0, 1, 2].filter((i) => i !== rounds[0].col);
     const colsA = firstCols[otherCols[0]];
     const colsPick = firstCols[rounds[0].col];
     const colsB = firstCols[otherCols[1]];
+    const pickTop = (id) => (id === colsPick[0] ? { hl: 1 } : {});
+    // 세 묶음을 가운데 아래에서부터 차례로 쌓는다. base는 이미 쌓인 장수.
+    const stackAt = (list, base) => list.slice().reverse().map((id, j) => C(id, 50 + (base + j) * 0.12, 72 - (base + j) * 0.42));
+    const piles = [pile(colsA, 24, 36), pile(colsPick, 50, 36, pickTop), pile(colsB, 76, 36)];
+    const heads = [T(24, 16, '① 다른 열'), T(50, 16, '② 고른 열', 'secret'), T(76, 16, '③ 나머지 열')];
+    const slowly = (frame, ms) => ({ ...frame, ms, mv: 1100 });
 
     TRICKS.push({
       id: 'twenty-one',
+      proto3d: 'deal21',
       title: '21장의 예언',
       en: 'Twenty-One Card Trick',
       cats: ['셀프워킹', '수학 원리'],
@@ -100,11 +124,20 @@
         { t: '각 열을 순서 그대로 모읍니다',
           text: '세 열을 각각 한 묶음으로 집습니다. 열 안의 카드 순서는 그대로 두고 섞지 않습니다. 세 열 모두 같은 방법으로 집어야 합니다.',
           tip: '한 열은 위에서부터, 다른 열은 아래에서부터 집으면 순서가 섞입니다. 같은 방향으로 쓸어 담듯 집으세요.',
-          frames: [F('세 묶음이 만들어졌습니다. 고른 카드는 이 묶음에 있습니다', pile(colsA, 24, 58), pile(colsPick, 50, 58, (id) => (id === colsPick[0] ? { hl: 1 } : {})), pile(colsB, 76, 58))] },
+          frames: [
+            slowly(F('고른 카드가 있는 열을 기억합니다', layout(rounds[0].before, 1)), 2200),
+            slowly(F('열마다 위에서 아래 순서 그대로 한 묶음으로 집습니다', piles, T(50, 16, '고른 열', 'secret')), 2800),
+          ] },
         { t: '고른 열을 가운데에 끼웁니다',
           text: '세 묶음을 "다른 열, 고른 열, 나머지 열" 순서로 포개 한 더미를 만듭니다. 고른 열을 맨 위나 맨 아래에 두면 안 됩니다. 이 동작이 비법의 전부입니다.',
           tip: '다른 열을 먼저 집고, 고른 열을 두 번째로, 남은 열을 세 번째로 집으면 실수가 없습니다.',
-          frames: [F('고른 열이 한가운데에 끼워졌습니다', pile(colsA, 24, 58), pile(colsPick, 50, 58, (id) => (id === colsPick[0] ? { hl: 1 } : {})), pile(colsB, 76, 58), T(50, 12, '고른 열은 가운데')), F('고른 카드는 이제 8~14번째 안에 있습니다', stacked(rounds[0].after), T(50, 12, '8~14번째'))] },
+          frames: [
+            slowly(F('쌓는 순서는 ① 다른 열, ② 고른 열, ③ 나머지 열입니다', piles, heads), 2800),
+            slowly(F('① 다른 열을 먼저 가운데 아래쪽에 놓습니다', stackAt(colsA, 0), piles[1], piles[2], heads.slice(1)), 2800),
+            slowly(F('② 고른 열을 그 위에 포갭니다', stackAt(colsA, 0), stackAt(colsPick, 7), piles[2], heads[2]), 2800),
+            slowly(F('③ 나머지 열을 맨 위에 올립니다', stackAt(colsA, 0), stackAt(colsPick, 7), stackAt(colsB, 14)), 2800),
+            slowly(F('고른 열이 한가운데 7장에 끼었습니다. 고른 카드는 8~14번째 안에 있습니다', stackAt(colsA, 0), stackAt(colsPick, 7), stackAt(colsB, 14), T(50, 40, '8~14번째', 'secret')), 3200),
+          ] },
         { t: '같은 과정을 두 번 더 합니다',
           text: '더미를 뒤집어 들고 다시 맨 위부터 한 장씩 돌아가며 세 열에 놓습니다. 어느 열인지 묻고, 그 열을 가운데에 끼웁니다. 모두 세 번 하면 됩니다. 라운드마다 고른 카드가 있을 수 있는 자리가 8~14번째, 9~13번째, 11번째로 좁혀집니다.',
           tip: '더미를 뒤집어도 괜찮습니다. 가운데가 기준이어서 방향이 바뀌어도 결과가 같습니다. 다만 매번 같은 방법으로 하세요.',
@@ -124,6 +157,7 @@
     const key = '7C', sel = 'QH';
     TRICKS.push({
       id: 'key-card',
+      proto3d: 'keycard',
       title: '열쇠 카드',
       en: 'Key Card Location',
       cats: ['셀프워킹'],
@@ -175,6 +209,7 @@
 
     TRICKS.push({
       id: 'cross-cut',
+      proto3d: 'crosscut',
       title: '십자 컷 예언',
       en: 'Cross-Cut Force',
       cats: ['셀프워킹', '심리'],
@@ -225,6 +260,7 @@
 
     TRICKS.push({
       id: 'four-aces',
+      proto3d: 'fouraces',
       title: '네 장의 에이스',
       en: 'Four Ace Cut',
       cats: ['셀프워킹'],
@@ -273,6 +309,7 @@
 
     TRICKS.push({
       id: 'overhand-control',
+      proto3d: 'overhand',
       title: '돌아오는 카드',
       en: 'Overhand Shuffle Control',
       cats: ['손기술'],
@@ -320,6 +357,7 @@
 
     TRICKS.push({
       id: 'ambitious',
+      proto3d: 'ambitious',
       title: '올라오는 카드',
       en: 'Ambitious Card',
       cats: ['손기술'],
@@ -375,6 +413,7 @@
 
     TRICKS.push({
       id: 'reversed',
+      proto3d: 'reversed',
       title: '뒤집히는 카드',
       en: 'Reversed Card',
       cats: ['셀프워킹'],
@@ -431,6 +470,7 @@
 
     TRICKS.push({
       id: 'clock',
+      proto3d: 'clock',
       title: '시계 예언',
       en: 'The Clock Trick',
       cats: ['셀프워킹', '수학 원리'],
@@ -482,6 +522,7 @@
 
     TRICKS.push({
       id: 'thirteen',
+      proto3d: 'thirteen',
       title: '13까지 세는 더미',
       en: 'Count-to-Thirteen Piles',
       cats: ['셀프워킹', '수학 원리'],
@@ -580,6 +621,7 @@
 
     TRICKS.push({
       id: 'last-card',
+      proto3d: 'lastcard',
       title: '마지막 남은 한 장',
       en: 'Down-Under Deal',
       cats: ['셀프워킹', '수학 원리'],
@@ -664,6 +706,7 @@
     const B = (x, y, a = 0, b = 10) => D(x, y, a, b, blue, 'u');
     TRICKS.push({
       id: 'do-as-i-do',
+      proto3d: 'doasido',
       title: '내가 하는 대로',
       en: 'Do As I Do',
       cats: ['셀프워킹', '2인 마술'],

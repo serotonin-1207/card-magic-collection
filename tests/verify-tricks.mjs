@@ -283,6 +283,64 @@ check('오광의 선택: 어떤 순서로 골라도 끝에는 비광', () => {
   assert.ok(L.equivoqueAlwaysEnds(['H1G', 'H3G', 'H12G', 'H8G', 'H11G'], 'H12G'));
 });
 
+const P3D = await import('../src/proto3d.js');
+const where = (s) => {
+  const ids = [...Object.values(s.piles).flat(), ...Object.keys(s.free)];
+  return { ids, unique: new Set(ids).size === ids.length };
+};
+
+check('3D 보기: 모든 장면이 끝 상태 조건을 만족하고 카드가 한 곳에만 있음', () => {
+  const linked = new Set(TRICKS.filter((t) => t.proto3d).map((t) => t.proto3d));
+  assert.deepEqual([...linked].sort(), Object.keys(P3D.SCENARIOS).sort(), '마술과 3D 장면 연결');
+  for (const key of Object.keys(P3D.SCENARIOS)) {
+    const total = Object.values(P3D.SCENARIOS[key].start()).flat().length;
+    for (const { ev, state } of P3D.run(key)) {
+      const w = where(state);
+      assert.ok(w.unique && w.ids.length === total, `${key} ${ev.type} 뒤 카드 위치 중복·누락`);
+    }
+    assert.ok(P3D.simulate(key).ok, `${key} 끝 상태`);
+  }
+});
+
+check('3D 오버핸드: A♠이 맨 아래로 갔다가 맨 위로 돌아옴', () => {
+  for (const { ev, state } of P3D.run('overhand')) {
+    if (ev.type === 'pile') assert.equal(state.piles.right.at(-1), 'AS');
+  }
+});
+
+check('3D 더블 리프트: 두 장을 뒤집으면 4♥가 보이고, 9♣가 덱 가운데로 감', () => {
+  const flips = [];
+  for (const { ev, state } of P3D.run('ambitious')) {
+    if (ev.type === 'flip' && ev.n === 2) flips.push([state.piles.deck[0], state.face[state.piles.deck[0]]]);
+  }
+  assert.deepEqual(flips, [['4H', true], ['9C', false]]);
+});
+
+check('3D 글라이드: 테이블로 나간 카드는 2♦, 맨 아래는 끝까지 Q♠', () => {
+  for (const { ev, state } of P3D.run('glide')) {
+    assert.equal(state.piles.hand.at(-1), 'QS');
+    if (ev.type === 'take') assert.deepEqual(state.piles.table, ['2D']);
+  }
+});
+
+check('3D 힌두: 오른손 덩어리의 맨 아래는 항상 8♠', () => {
+  for (const { state } of P3D.run('hindu')) assert.equal(state.piles.right.at(-1), '8S');
+});
+
+check('시계 장면: 원에는 언제나 12장이 놓이고 예언 카드가 정한 시각 자리에 있음', () => {
+  for (const [id, known, hour] of [['clock', 'JS', 5], ['hw-clock', 'H8G', 9]]) {
+    const t = TRICKS.find((x) => x.id === id);
+    const frames = [...t.show, ...t.steps.flatMap((s) => s.frames)];
+    const rings = frames.map((f) => f.cards.filter((c) => c.s === 0.46)).filter((r) => r.length);
+    assert.ok(rings.length > 0, `${id} 원 장면 없음`);
+    rings.forEach((r) => assert.equal(r.length, 12, `${id} 원의 장수 ${r.length}`));
+    const ring = rings[0];
+    const a = (hour / 12) * Math.PI * 2 - Math.PI / 2;
+    const at = ring.find((c) => Math.abs(c.x - (50 + Math.cos(a) * 33)) < 0.01 && Math.abs(c.y - (50 + Math.sin(a) * 37)) < 0.01);
+    assert.equal(at && at.id, known, `${id} ${hour}시 자리`);
+  }
+});
+
 // ── 콘텐츠 무결성 ──
 check('공연 화면에 비법 표시가 없음 (금색 투시 카드·비밀 라벨 금지)', () => {
   for (const t of TRICKS) {

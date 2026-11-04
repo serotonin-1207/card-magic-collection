@@ -142,6 +142,7 @@
         <div class="cap"><p id="say" class="say" aria-live="polite"></p>
           <div class="cap-ctl">
             <span id="count" class="count"></span>
+            <button class="ghost" id="speed" aria-pressed="false">느리게 보기</button>
             <button class="ghost" id="toggle">일시정지</button>
             <button class="ghost" id="again">다시 보기</button>
           </div>
@@ -166,6 +167,15 @@
       toggleEl.hidden = n < 2;
     });
     cleanup = () => { player.stop(); stage.destroy(); };
+    const speedEl = main.querySelector('#speed');
+    player.setSlow(!!store.slow);
+    speedEl.setAttribute('aria-pressed', !!store.slow);
+    speedEl.addEventListener('click', () => {
+      store.slow = !store.slow;
+      save();
+      player.setSlow(store.slow);
+      speedEl.setAttribute('aria-pressed', store.slow);
+    });
 
     const paneShow = () => `
       <p class="lead-text">${esc(t.effect)}</p>
@@ -176,6 +186,7 @@
         ${t.origin ? `<div><dt>유래</dt><dd>${esc(t.origin)}</dd></div>` : ''}
       </dl>
       ${t.lab ? `<button class="btn wide" data-go="${t.lab}">앱과 직접 해 보기</button>` : ''}
+      ${t.proto3d ? `<button class="btn wide" data-go="p3d-${t.proto3d}">3D로 보기</button>` : ''}
       <button class="btn gold-btn wide" data-tab="learn">비법 보기</button>
       <p class="hint">공연을 먼저 관객의 눈으로 본 뒤 비법을 여는 것이 좋습니다.</p>`;
 
@@ -183,6 +194,7 @@
       const s = t.steps[step];
       return `
       <div class="legend">${miniCard('AS', 'xr')}<span>금색 점선 카드는 관객에게 뒷면으로 보입니다. 앞면은 마술사만 압니다.</span></div>
+      ${t.proto3d ? `<button class="btn wide" data-go="p3d-${t.proto3d}">손 안의 움직임을 3D로 보기</button>` : ''}
       <nav class="dots" aria-label="단계">${t.steps.map((_, i) => `<button data-step="${i}" aria-current="${i === step}">${i + 1}</button>`).join('')}</nav>
       <h2 class="step-title">${esc(s.t)}</h2>
       <p class="body-text">${esc(s.text)}</p>
@@ -433,6 +445,76 @@
     start();
   }
 
+  // ── 3D 보기: 손기술 ───────────────────
+  // three.js 묶음(js/proto3d.js)은 이 화면을 열 때만 불러온다. key는 마술의 proto3d 값이다.
+  function viewProto3D(key) {
+    const t = TRICKS.find((x) => x.proto3d === key);
+    if (!t) {
+      route = 'home';
+      return viewHome();
+    }
+    main.innerHTML = `
+      <div class="detail-head"><button class="back" data-back aria-label="뒤로">‹</button><div class="detail-title"><h1>${esc(t.title)}</h1><span>3D · ${esc(t.en)}</span></div></div>
+      <div class="gl-wrap">
+        <div id="gl" class="gl"></div>
+        <p id="gl-msg" class="gl-msg">3D 화면을 준비하고 있습니다</p>
+      </div>
+      <p id="say" class="say lab-say" aria-live="polite"></p>
+      <div class="cap-ctl">
+        <span class="count"></span>
+        <button class="ghost" id="speed" aria-pressed="${!!store.slow}">느리게 보기</button>
+        <button class="ghost" id="toggle">일시정지</button>
+        <button class="ghost" id="again">다시 보기</button>
+      </div>
+      <div id="views" class="decks" role="group" aria-label="보는 각도"></div>
+      <p class="hint">화면을 손가락으로 끌면 원하는 각도로 돌려 볼 수 있습니다. 손 모양은 넣지 않았습니다.</p>`;
+    const say = main.querySelector('#say');
+    const msg = main.querySelector('#gl-msg');
+    const toggle = main.querySelector('#toggle');
+    const viewsEl = main.querySelector('#views');
+    let alive = true;
+    let scene = null;
+    cleanup = () => {
+      alive = false;
+      if (scene) scene.destroy();
+    };
+    const markView = (name) => viewsEl.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.view === name));
+
+    import(new URL('js/proto3d.js', document.baseURI).href)
+      .then((mod) => {
+        viewsEl.innerHTML = mod.viewsOf(key).map(([name, label]) => `<button data-view="${name}" aria-pressed="false">${label}</button>`).join('');
+        return mod.mount(main.querySelector('#gl'), key, { onSay: (text) => { say.textContent = text; }, onView: markView, slow: !!store.slow });
+      })
+      .then((s) => {
+        if (!alive) return s.destroy();
+        scene = s;
+        main.querySelector('#gl').scene = s;
+        msg.hidden = true;
+      })
+      .catch(() => {
+        if (alive) msg.textContent = '이 기기에서는 3D 화면을 열 수 없습니다. 이전 화면의 평면 애니메이션으로 보세요.';
+      });
+
+    main.querySelector('#speed').addEventListener('click', (e) => {
+      store.slow = !store.slow;
+      save();
+      e.currentTarget.setAttribute('aria-pressed', store.slow);
+      if (scene) scene.setSlow(store.slow);
+    });
+    toggle.addEventListener('click', () => {
+      if (scene) toggle.textContent = scene.toggle() ? '일시정지' : '재생';
+    });
+    main.querySelector('#again').addEventListener('click', () => {
+      if (!scene) return;
+      scene.restart();
+      toggle.textContent = '일시정지';
+    });
+    viewsEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-view]');
+      if (b && scene) scene.setView(b.dataset.view);
+    });
+  }
+
   // ── 내 연습 ───────────────────────────
   let installPrompt = null;
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -481,6 +563,7 @@
     else if (r === 'lab21') viewLab21();
     else if (r === 'labkruskal') viewLabKruskal();
     else if (r === 'labmonth') viewLabMonth();
+    else if (r.startsWith('p3d-')) viewProto3D(r.slice(4));
     else if (r === 'me') viewMe();
     else if (r.startsWith('t-') && TRICKS.find((t) => t.id === r.slice(2))) viewTrick(TRICKS.find((t) => t.id === r.slice(2)));
     else { route = 'home'; viewHome(); }
